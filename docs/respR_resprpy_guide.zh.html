@@ -84,6 +84,7 @@
   <a href="#testlin">线性检验</a>
   <a href="#plot">绘图</a>
   <a href="#example">完整流程</a>
+  <a href="#structure">结构对照</a>
   <a href="#objects">对象结构</a>
   <a href="#diffs">已知差异</a>
 </nav>
@@ -414,6 +415,49 @@ p.plot_calc_rate(cr, panel=2)
 p.plot_calc_rate(cr, save="a.png")
 p.plot_oxy_crit(oc)</code></pre></div>
 </div>
+
+<h2 id="structure">十三点五、包结构对照（respR vs resprpy）</h2>
+
+<p><b>respR</b> 是标准 R 包：<code>R/</code> 目录 33 个源文件 + 16 个依赖包
+（data.table、dplyr、marelac、roll、segmented、lubridate、xml2…），
+其中滚动回归（roll）、物理常数（marelac）、断点回归（segmented）是
+独立 C/C++ 包。<b>resprpy</b> 是纯 Python 包：<code>src/resprpy/</code>
+19 个模块，仅依赖 numpy/scipy（绘图另需 matplotlib），所有底层算法
+内联移植，无 C/C++ 运行时。</p>
+
+<h4>源码文件 ↔ 模块对照</h4>
+<table>
+  <tr><th>respR (R/)</th><th>resprpy (src/resprpy/)</th><th>说明</th></tr>
+  <tr><td><code>calc_rate.R</code></td><td><code>calc.py</code></td><td>手动速率 + CalcRate 类</td></tr>
+  <tr><td><code>calc_rate.int.R</code> <code>calc_rate.bg.R</code> <code>calc_rate.ft.R</code> <code>auto_rate.int.R</code></td><td><code>intflow.py</code></td><td>分段/背景/流水式/自动分段</td></tr>
+  <tr><td><code>auto_rate.R</code> <code>auto_rate_funs.R</code></td><td><code>auto.py</code></td><td>自动速率 + AutoRate 类（滚动回归/KDE/峰检测内联）</td></tr>
+  <tr><td><code>adjust_rate.R</code> <code>adjust_rate.ft.R</code></td><td><code>adjust.py</code></td><td>6 种背景校正</td></tr>
+  <tr><td><code>select_rate.R</code> <code>select_rate.ft.R</code> <code>test_lin.R</code></td><td><code>selectrate.py</code></td><td>34 种筛选 + 线性检验</td></tr>
+  <tr><td><code>convert_DO.R</code> <code>convert_MR.R</code> <code>convert_rate.R</code> <code>convert_val.R</code></td><td><code>convert.py</code></td><td>单位换算 + ConvertRate 类</td></tr>
+  <tr><td><code>convert_rate.ft.R</code></td><td><code>convertft.py</code></td><td>流水式换算</td></tr>
+  <tr><td><code>format_time.R</code></td><td><code>timefmt.py</code></td><td>时间解析</td></tr>
+  <tr><td><code>import_file.R</code></td><td><code>importers.py</code></td><td>14 种仪器解析器</td></tr>
+  <tr><td><code>inspect.R</code> <code>inspect.ft.R</code></td><td><code>inspectmod.py</code></td><td>6 项 QC 检查</td></tr>
+  <tr><td><code>oxy_crit.R</code></td><td><code>oxycrit.py</code></td><td>bsr + segmented（Muggeo 内联）</td></tr>
+  <tr><td><code>data.R</code> <code>sim_data.R</code> <code>subsample.R</code> <code>subset_data.R</code></td><td><code>data.py</code></td><td>数据工具</td></tr>
+  <tr><td><code>util_plots.R</code></td><td><code>plots.py</code></td><td>绘图（matplotlib）</td></tr>
+  <tr><td><code>unit_args.R</code> <code>util_val.R</code></td><td><code>_units.py</code> + <code>convert.py</code></td><td>单位系统</td></tr>
+  <tr><td>（依赖）<code>marelac</code></td><td><code>_marelac.py</code> <code>_gibbs_coeffs.py</code></td><td>物理常数内联</td></tr>
+  <tr><td>（依赖）<code>roll</code>（C++）</td><td><code>auto.py</code></td><td>滚动回归内联</td></tr>
+  <tr><td>（依赖）<code>segmented</code></td><td><code>oxycrit.py</code></td><td>Muggeo 算法 + boot 内联</td></tr>
+  <tr><td>（R 底层）<code>RNG.c</code>（MT19937）</td><td><code>_rng.py</code></td><td>R 随机数引擎逐位复刻</td></tr>
+  <tr><td>（R 底层）<code>stats</code> C（zeroin2/density/fft）</td><td><code>auto.py</code></td><td>uniroot/核密度/FFT 内联</td></tr>
+  <tr><td>单位正则表（<code>*.rgx.R</code>）</td><td><code>_unit_regexes.py</code></td><td>gen_code.py 自动提取</td></tr>
+  <tr><td><code>respR.R</code> <code>startup.R</code></td><td><code>__init__.py</code></td><td>包入口/导出</td></tr>
+</table>
+
+<h4>依赖对照</h4>
+<table>
+  <tr><th>respR 依赖（16 个）</th><th>resprpy 依赖</th></tr>
+  <tr><td>data.table, dplyr, purrr, stringr, glue, xml2, lubridate, magrittr…</td><td>numpy, scipy（纯 Python 实现对应逻辑）</td></tr>
+  <tr><td>marelac（物理常数）、roll（滚动回归 C++）、segmented（断点回归）</td><td>内联为 <code>_marelac.py</code>、<code>auto.py</code>、<code>oxycrit.py</code> + <code>_rng.py</code></td></tr>
+  <tr><td>graphics / grDevices（绘图）</td><td>matplotlib（可选）</td></tr>
+</table>
 
 <h2 id="example">十三、完整流程示例（间歇式呼吸）</h2>
 

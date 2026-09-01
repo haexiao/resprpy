@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>respR Usage Guide &amp; resprpy Comparison</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --muted: #5a5a72;
+    --border: #e2e2ee; --card: #f7f7fb; --accent: #1f77b4;
+    --r: #b2182b; --py: #1e8449; --code-bg: #f4f4f8;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+         color: var(--fg); line-height: 1.7; margin: 0; background: var(--bg); }
+  header { background: linear-gradient(135deg, #102a43, #1f77b4); color: #fff;
+           padding: 3rem 2rem 2.5rem; }
+  header h1 { margin: 0 0 .4rem; font-size: 2rem; }
+  header p { margin: 0; opacity: .92; font-size: .98rem; }
+  header .lang { display: inline-block; margin-top: .8rem; font-size: .8rem;
+                 background: rgba(255,255,255,.18); padding: .2rem .7rem;
+                 border-radius: 4px; }
+  header .lang a { color: #fff; }
+  nav { position: sticky; top: 0; background: #102a43; padding: .5rem 2rem;
+        overflow-x: auto; white-space: nowrap; z-index: 10; }
+  nav a { color: #cfe3f5; text-decoration: none; font-size: .85rem;
+          margin-right: 1.2rem; }
+  nav a:hover { color: #fff; text-decoration: underline; }
+  main { max-width: 980px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
+  h2 { border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+       margin-top: 2.8rem; font-size: 1.45rem; }
+  h3 { margin-top: 2rem; font-size: 1.15rem; color: #123; }
+  h4 { margin: 1.2rem 0 .3rem; font-size: 1rem; }
+  table { border-collapse: collapse; width: 100%; margin: .8rem 0;
+          font-size: .9rem; }
+  th, td { border: 1px solid var(--border); padding: .45rem .6rem;
+           text-align: left; vertical-align: top; }
+  th { background: var(--card); font-weight: 600; }
+  tr:nth-child(even) td { background: #fbfbfe; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .88em;
+         background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border);
+        border-radius: 6px; padding: .8rem 1rem; overflow-x: auto;
+        font-size: .86rem; line-height: 1.55; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .dual { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .dual pre { margin: 0; }
+  .r-tag, .py-tag { font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+                    display: inline-block; padding: .1rem .5rem; border-radius: 3px;
+                    color: #fff; margin-bottom: .3rem; }
+  .r-tag { background: var(--r); }
+  .py-tag { background: var(--py); }
+  .note { background: #fff8e6; border-left: 4px solid #e6a817; padding: .6rem 1rem;
+          margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .ok { background: #eefaf1; border-left: 4px solid var(--py); padding: .6rem 1rem;
+        margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .warn { background: #fdeef0; border-left: 4px solid var(--r); padding: .6rem 1rem;
+          margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .flow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+          background: var(--card); border: 1px solid var(--border);
+          border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .flow span { background: #fff; border: 1px solid var(--accent); color: var(--accent);
+               border-radius: 20px; padding: .15rem .8rem; font-size: .83rem; }
+  .flow b { color: var(--muted); font-weight: 400; }
+  footer { color: var(--muted); font-size: .82rem; text-align: center;
+           padding: 2rem; border-top: 1px solid var(--border); }
+  @media (max-width: 760px) { .dual { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>respR Usage Guide &amp; resprpy Comparison</h1>
+  <p>Aquatic respirometry (oxygen uptake / metabolic rate) analysis: the R package
+  respR 2.3.4 (Harianto &amp; Carey 2019, Methods in Ecology and Evolution), its
+  functions and usage, compared item by item with <b>resprpy</b>, the Python port.
+  resprpy's numeric outputs are identical to R (57 parity tests green).</p>
+  <div class="lang">中文版: <a href="respR_resprpy_guide.zh.html">respR_resprpy_guide.zh.html</a></div>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#import">Import</a>
+  <a href="#inspect">Inspect</a>
+  <a href="#utils">Utilities</a>
+  <a href="#calc">calc_rate</a>
+  <a href="#auto">auto_rate</a>
+  <a href="#adjust">adjust_rate</a>
+  <a href="#select">select_rate</a>
+  <a href="#convert">convert</a>
+  <a href="#oxycrit">oxy_crit</a>
+  <a href="#testlin">test_lin</a>
+  <a href="#plot">Plots</a>
+  <a href="#example">Workflow</a>
+  <a href="#structure">Structure</a>
+  <a href="#objects">Objects</a>
+  <a href="#diffs">Differences</a>
+</nav>
+
+<main>
+
+<h2 id="overview">1. Overview &amp; Analysis Workflow</h2>
+
+<p><strong>respR</strong> is the standard R package for respirometry data: import
+instrument files, quality-check them, compute oxygen uptake rates (MO₂) manually
+or automatically, correct for background respiration, convert units, select
+results, and estimate critical oxygen tension (Pcrit / O₂crit).
+<strong>resprpy</strong> is its complete Python port (GPL-3): all 27 exported
+functions, numeric outputs verified element-by-element against R 4.5.3 —
+suitable for standalone/desktop use without an R runtime.</p>
+
+<div class="flow">
+  <span>data file</span><b>→</b>
+  <span>import_file</span><b>→</b>
+  <span>inspect</span><b>→</b>
+  <span>calc_rate / auto_rate</span><b>→</b>
+  <span>adjust_rate</span><b>→</b>
+  <span>convert_rate</span><b>→</b>
+  <span>select_rate</span><b>→</b>
+  <span>oxy_crit</span><b>→</b>
+  <span>results</span>
+</div>
+
+<h3>Quick reference — all 27 exports</h3>
+<table>
+  <tr><th>Purpose</th><th>respR (R)</th><th>resprpy (Python)</th><th>Status</th></tr>
+  <tr><td>Import instrument files</td><td><code>import_file()</code></td><td><code>import_file()</code></td><td>✅ NeoFox exact</td></tr>
+  <tr><td>Data inspection</td><td><code>inspect()</code> / <code>inspect.ft()</code></td><td><code>inspect()</code> / <code>inspect_ft()</code></td><td>✅ parity</td></tr>
+  <tr><td>Time formatting</td><td><code>format_time()</code></td><td><code>format_time()</code></td><td>✅ exact</td></tr>
+  <tr><td>Sampling / subset / simulate</td><td><code>subsample()</code> <code>subset_data()</code> <code>sim_data()</code></td><td>same names</td><td>✅ parity</td></tr>
+  <tr><td>Manual rates</td><td><code>calc_rate()</code> <code>calc_rate.int()</code> <code>calc_rate.bg()</code> <code>calc_rate.ft()</code></td><td><code>calc_rate()</code> <code>calc_rate_int()</code> <code>calc_rate_bg()</code> <code>calc_rate_ft()</code></td><td>✅ parity</td></tr>
+  <tr><td>Automatic rates</td><td><code>auto_rate()</code> <code>auto_rate.int()</code></td><td><code>auto_rate()</code> <code>auto_rate_int()</code></td><td>✅ parity</td></tr>
+  <tr><td>Background adjustment</td><td><code>adjust_rate()</code> <code>adjust_rate.ft()</code></td><td><code>adjust_rate()</code> <code>adjust_rate_ft()</code></td><td>✅ 6 methods</td></tr>
+  <tr><td>Result selection</td><td><code>select_rate()</code> <code>select_rate.ft()</code></td><td><code>select_rate()</code> <code>select_rate_ft()</code></td><td>✅ all 34 methods</td></tr>
+  <tr><td>Unit conversion</td><td><code>convert_DO()</code> <code>convert_MR()</code> <code>convert_rate()</code> <code>convert_rate.ft()</code> <code>convert_val()</code></td><td>same names (dots → underscores)</td><td>✅ parity</td></tr>
+  <tr><td>Critical oxygen tension</td><td><code>oxy_crit()</code></td><td><code>oxy_crit()</code></td><td>✅ bsr + segmented</td></tr>
+  <tr><td>Linearity test</td><td><code>test_lin()</code></td><td><code>test_lin()</code></td><td>🟡 structure matches</td></tr>
+  <tr><td>Unit reference table</td><td><code>unit_args()</code></td><td><code>unit_args()</code></td><td>✅</td></tr>
+  <tr><td>Plotting</td><td><code>plot(x)</code> S3</td><td><code>plot_inspect()</code> <code>plot_calc_rate()</code> <code>plot_auto_rate()</code> <code>plot_oxy_crit()</code></td><td>✅ matplotlib</td></tr>
+  <tr><td>Piping</td><td><code>%&gt;%</code></td><td>— (Python chaining)</td><td>➖ n/a</td></tr>
+</table>
+
+<h2 id="import">2. Import — import_file</h2>
+
+<p>Reads raw files exported by respirometry software (Witrox, NeoFox, AutoResp,
+Pyro etc. — 14 formats), auto-detecting headers and units.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>library(respR)
+dat &lt;- import_file("Witrox_eg.txt")
+# $dataframe: raw data table</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>import resprpy as p
+dat = p.import_file("Witrox_eg.txt")
+# dat["dataframe"]: raw data table</code></pre></div>
+</div>
+
+<div class="note"><b>Note:</b> R's <code>fread</code> mis-parses some tab-separated
+files into extra columns (an R-side defect); resprpy's parsers are stricter.
+Numeric parity is verified on samples R parses correctly (NeoFox, max error 0.0).</div>
+
+<h2 id="inspect">3. Data inspection — inspect</h2>
+
+<p>Quality checks: time increments, oxygen range, missing values, duplicates,
+sequential anomalies (6 QC checks), reporting the locations of problem rows.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>res &lt;- inspect(dat, time = 1,
+               oxygen = 2, width = 0.1)
+res$checks   # QC table
+res$locs     # problem row locations</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>res = p.inspect(dat, time=1, oxygen=2,
+                width=0.1)
+res["checks"]
+res["locs"]</code></pre></div>
+</div>
+
+<p><code>inspect.ft()</code> / <code>inspect_ft()</code> targets flowthrough data:
+checks inflow, outflow and their delta simultaneously.</p>
+
+<h2 id="utils">4. Data utilities</h2>
+
+<h4>format_time — time string parsing</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>format_time("2024-01-01 12:30:45",
+            format = "ymdHMS")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.format_time("2024-01-01 12:30:45",
+              format="ymdHMS")</code></pre></div>
+</div>
+<p>Formats: <code>ymdHMS</code>, <code>dmyHMS</code>, <code>HMS</code> etc.;
+returns numeric seconds (resprpy keeps R's seconds+1 convention).</p>
+
+<h4>subsample / subset_data</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>subsample(dat, n = 100)          # 100 evenly spaced rows
+subsample(dat, length.out = 50)  # 1 in every 50
+subset_data(dat, from = 10, to = 90,
+            by = "time")         # time interval</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.subsample(dat, n=100)
+p.subsample(dat, length_out=50)
+p.subset_data(dat, from_=10, to=90, by="time")</code></pre></div>
+</div>
+
+<h4>sim_data — simulated data</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>sim_data(len = 300, type = "default",
+         sd = 0.05)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.sim_data(len=300, type="default", sd=0.05)</code></pre></div>
+</div>
+<p>Generates oxygen-consumption series with known slope, used by
+<code>test_lin()</code> to benchmark automatic rate detection.</p>
+
+<h2 id="calc">5. Manual rate calculation</h2>
+
+<h4>calc_rate — regression over specified interval</h4>
+<p>Fits a linear regression over the window defined by <code>from/to</code>
+(time or row) — gives slope (MO₂), intercept, R², and endpoint values.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cr &lt;- calc_rate(dat, from = 10, to = 90,
+                by = "time")     # or by = "row"
+cr$rate        # rate value(s)
+cr$summary     # regression details
+cr$subsets     # raw data of each window</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cr = p.calc_rate(dat, from_=10, to=90,
+                 by="time")
+cr.rate
+cr.summary     # dict
+cr.subsets     # list of arrays</code></pre></div>
+</div>
+
+<h4>calc_rate.int — automatic interval segmentation</h4>
+<p>Segments data by flush–wait–measure cycles: <code>starts</code>,
+<code>wait</code>, <code>measure</code> — designed for intermittent-flow
+respirometry.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>calc_rate.int(dat, starts = 30,
+              wait = 5, measure = 20,
+              by = "row")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.calc_rate_int(dat, starts=30,
+                wait=5, measure=20,
+                by="row")</code></pre></div>
+</div>
+
+<h4>calc_rate.bg — blank background rate</h4>
+<p>Computes background respiration from blank (animal-free) data, for use by
+<code>adjust_rate()</code>. Same arguments as <code>calc_rate</code> (defaults to
+the whole series).</p>
+
+<h4>calc_rate.ft — flowthrough rate</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>calc_rate.ft(oxy_in, oxy_out,
+             flowrate = 2,  # e.g. L/h
+             by = "time", width = 10)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.calc_rate_ft(oxy_in, oxy_out,
+               flowrate=2, by="time",
+               width=10)</code></pre></div>
+</div>
+<p>MO₂ = inflow–outflow O₂ difference × flow rate; <code>width</code> is the
+rolling window.</p>
+
+<h2 id="auto">6. Automatic rate calculation — auto_rate</h2>
+
+<p>Scans all possible windows and selects the best rate; 6 methods:</p>
+<table>
+  <tr><th>method</th><th>meaning</th></tr>
+  <tr><td><code>linear</code></td><td>highest R² rolling regression (with kernel-density peaks)</td></tr>
+  <tr><td><code>lowest</code> / <code>highest</code></td><td>lowest/highest rate (absolute-value semantics)</td></tr>
+  <tr><td><code>minimum</code> / <code>maximum</code></td><td>numerically smallest/largest rate</td></tr>
+  <tr><td><code>rolling</code></td><td>full rolling-window scan</td></tr>
+  <tr><td><code>interval</code></td><td>equal-length intervals</td></tr>
+</table>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>ar &lt;- auto_rate(dat, method = "linear",
+                width = 10, by = "row")
+ar$rate       # selected rate
+ar$summary    # results (rank/row/endrow)
+ar$density    # kernel density estimate
+ar$peaks      # density peaks</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>ar = p.auto_rate(dat, method="linear",
+                 width=10, by="row")
+ar.rate
+ar.summary    # dict
+ar.density    # (x, y) tuple
+ar.peaks</code></pre></div>
+</div>
+
+<div class="ok"><b>Parity:</b> the whole auto_rate chain (rolling regression,
+bw.SJ bandwidth, kernel density, peak detection) matches R bit-for-bit;
+density 512-point max relative diff 2e-13.</div>
+
+<h2 id="adjust">7. Background adjustment — adjust_rate</h2>
+
+<p>6 methods: <code>value</code> (constant), <code>mean</code> (mean of blank),
+<code>paired</code>, <code>concurrent</code> (parallel blank),
+<code>linear</code> and <code>exponential</code> (interpolated blank).</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>adj &lt;- adjust_rate(cr, by = -0.0002,
+                   method = "value")
+adj &lt;- adjust_rate(cr, by = bg,  # calc_rate.bg result
+                   method = "mean")
+adj$summary$rate.adjusted  # adjusted rate</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>adj = p.adjust_rate(cr, by=-0.0002,
+                    method="value")
+adj = p.adjust_rate(cr, by=bg, method="mean")
+adj.summary["rate.adjusted"]</code></pre></div>
+</div>
+
+<h2 id="select">8. Result selection — select_rate</h2>
+
+<p>34 selection methods in four groups:</p>
+<ul>
+  <li><b>Numeric</b>: <code>lowest/highest/minimum/maximum</code> (n),
+      <code>*_percentile</code>, <code>rate</code> (interval),
+      <code>zero/nonzero/positive/negative</code></li>
+  <li><b>Time/row</b>: <code>time/time_omit</code>, <code>row/row_omit</code>,
+      <code>duration</code>, <code>oxygen/oxygen_omit</code></li>
+  <li><b>Index</b>: <code>rank/rank_omit</code>, <code>rep/rep_omit</code>,
+      <code>manual/manual_omit</code></li>
+  <li><b>Reorder</b>: <code>rolling</code>, <code>intercept/slope/rsq</code>,
+      <code>density/linear</code> (auto_rate linear objects only)</li>
+</ul>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cv &lt;- convert_rate(cr, ...)   # input must be convert_rate
+sr &lt;- select_rate(cv, "highest", n = 3)
+sr &lt;- select_rate(cv, "rate", n = c(-0.1, 0.1))
+sr$summary       # selected results
+sr$original      # unselected input</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cv = p.convert_rate(cr, ...)
+sr = p.select_rate(cv, "highest", n=3)
+sr = p.select_rate(cv, "rate", n=[-0.1, 0.1])
+sr.summary
+sr.original</code></pre></div>
+</div>
+
+<div class="note"><b>R object semantics:</b> select_rate returns a <b>copy</b>;
+the input object is never modified (resprpy behaves the same). R rejects
+<code>density/linear</code> on non-auto_rate-linear objects and <code>rep</code>
+methods without rep values — resprpy raises the identical errors.</div>
+
+<h2 id="convert">9. Unit conversion</h2>
+
+<h4>convert_rate — full conversion chain</h4>
+<p>Converts rates from oxygen/time units to a target unit, optionally applying
+volume (→ absolute MO₂), mass/area (→ specific rates), and S/t/P corrections
+for dissolved oxygen.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cv &lt;- convert_rate(cr,
+  oxy.unit = "mg/L", time.unit = "sec",
+  output.unit = "mg/h/kg",
+  volume = 0.1, mass = 0.01)
+cv$rate.output   # converted rates</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cv = p.convert_rate(cr,
+  oxy_unit="mg/L", time_unit="sec",
+  output_unit="mg/h/kg",
+  volume=0.1, mass=0.01)
+cv.rate_output</code></pre></div>
+</div>
+
+<h4>convert_DO / convert_MR / convert_val — base converters</h4>
+<table>
+  <tr><th>Function</th><th>Purpose</th></tr>
+  <tr><td><code>convert_DO(x, from, to, S, t, P)</code></td><td>Dissolved-oxygen units: mg/L, %Air, %O₂, kPa, hPa, torr, umol/L, mL/L… physics from marelac (solubility/molar volume/density), salinity S, temperature t, pressure P</td></tr>
+  <tr><td><code>convert_MR(x, from, to, ...)</code></td><td>Metabolic-rate units (with time: per sec/min/hr/day)</td></tr>
+  <tr><td><code>convert_val(x, from, to)</code></td><td>Generic numeric unit conversion (length, mass, volume, pressure…)</td></tr>
+</table>
+
+<div class="ok"><b>Parity:</b> physical anchors exact (sw_dens=1024.64077347883,
+molvol=24.03038425, mg/L→%Air=108.4419), ≤1e-12 element-wise.</div>
+
+<h2 id="oxycrit">10. Critical oxygen tension — oxy_crit</h2>
+
+<p>Estimates the critical oxygen tension (Pcrit / O₂crit) — the point where MO₂
+starts to decline with ambient oxygen. Two methods:</p>
+<ul>
+  <li><b>bsr</b> (default): broken-stick regression (Yeager &amp; Ultsch 1989),
+      reporting both intercept and midpoint estimates</li>
+  <li><b>segmented</b>: piecewise regression (Muggeo 2003, the R `segmented`
+      algorithm including its bootstrap-restart random search)</li>
+</ul>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>oc &lt;- oxy_crit(dat, method = "bsr",
+               width = 0.1)
+oc$crit        # list(intercept, midpoint)
+oc$summary     # broken-stick results
+oc2 &lt;- oxy_crit(dat, method = "segmented")
+oc2$crit       # breakpoint value</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>oc = p.oxy_crit(dat, method="bsr", width=0.1)
+oc["crit"]     # dict(intercept, midpoint)
+oc["summary"]
+oc2 = p.oxy_crit(dat, method="segmented")
+oc2["crit"]</code></pre></div>
+</div>
+
+<div class="ok"><b>Parity:</b> the segmented method reproduces R's MT19937 RNG
+bit-for-bit (set.seed sequences identical); the 10-sample bootstrap-restart
+search matches R exactly (crit=7.719111…).</div>
+
+<h2 id="testlin">11. Linearity test — test_lin</h2>
+
+<p>Tests auto_rate detection accuracy with known-slope data: simulate → auto-detect
+→ compare with truth, returning regression statistics.</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>test_lin(reps = 1, len = 300,
+         sd = 0.05, type = "default")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.test_lin(reps=1, len_=300, sd=0.05,
+           type="default", seed=None)</code></pre></div>
+</div>
+<div class="note"><b>Difference:</b> resprpy embeds R's MT19937 (bit-exact), but
+the noise-generation call sequence inside <code>sim_data</code> differs from R's
+internal call order, so statistics match in structure while individual random
+samples are not comparable value-by-value.</div>
+
+<h2 id="plot">12. Plotting</h2>
+
+<p>R uses the S3 generic <code>plot(x)</code>; resprpy provides matplotlib
+versions (colours, layout and content aligned with R's base graphics):</p>
+<table>
+  <tr><th>Object</th><th>R</th><th>Python</th><th>Panels</th></tr>
+  <tr><td>inspect</td><td><code>plot(ins)</code></td><td><code>p.plot_inspect(ins)</code></td><td>timeseries + row axis + rolling fit</td></tr>
+  <tr><td>calc_rate</td><td><code>plot(cr)</code></td><td><code>p.plot_calc_rate(cr, pos=1)</code></td><td>2×2: full / close-up / residuals / QQ</td></tr>
+  <tr><td>auto_rate</td><td><code>plot(ar)</code></td><td><code>p.plot_auto_rate(ar, pos=1)</code></td><td>full / close-up / rolling rate / residuals / QQ (+density for linear)</td></tr>
+  <tr><td>oxy_crit</td><td><code>plot(oc)</code></td><td><code>p.plot_oxy_crit(oc)</code></td><td>timeseries + breakpoint lines / Rate~Oxygen</td></tr>
+</table>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>plot(cr)              # all 4 panels
+plot(cr, panel = 2)   # single panel
+plot(oc)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.plot_calc_rate(cr)            # window
+p.plot_calc_rate(cr, panel=2)
+p.plot_calc_rate(cr, save="a.png")
+p.plot_oxy_crit(oc)</code></pre></div>
+</div>
+
+<h2 id="example">13. Complete workflow (intermittent-flow)</h2>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>library(respR)
+
+# 1. import &amp; inspect
+dat &lt;- import_file("fish.txt")
+ins &lt;- inspect(dat, time = 1,
+               oxygen = 2)
+
+# 2. automatic segmentation
+cr &lt;- calc_rate.int(ins,
+    starts = 30, wait = 5,
+    measure = 20, by = "row")
+
+# 3. background correction
+bg &lt;- calc_rate.bg(bg_dat)
+adj &lt;- adjust_rate(cr, by = bg,
+    method = "mean")
+
+# 4. unit conversion
+cv &lt;- convert_rate(adj,
+    oxy.unit = "mg/L",
+    time.unit = "sec",
+    output.unit = "mg/h/kg",
+    volume = 0.1, mass = 0.01)
+
+# 5. select best rates
+sr &lt;- select_rate(cv, "highest", n = 3)
+
+# 6. critical oxygen
+oc &lt;- oxy_crit(fish_po2_data,
+    method = "segmented")
+
+# 7. plots
+plot(cr); plot(sr)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>import resprpy as p
+
+# 1. import &amp; inspect
+dat = p.import_file("fish.txt")
+ins = p.inspect(dat, time=1, oxygen=2)
+
+# 2. automatic segmentation
+cr = p.calc_rate_int(ins,
+    starts=30, wait=5, measure=20,
+    by="row")
+
+# 3. background correction
+bg = p.calc_rate_bg(bg_dat)
+adj = p.adjust_rate(cr, by=bg,
+    method="mean")
+
+# 4. unit conversion
+cv = p.convert_rate(adj,
+    oxy_unit="mg/L", time_unit="sec",
+    output_unit="mg/h/kg",
+    volume=0.1, mass=0.01)
+
+# 5. select best rates
+sr = p.select_rate(cv, "highest", n=3)
+
+# 6. critical oxygen
+oc = p.oxy_crit(fish_po2_data,
+    method="segmented")
+
+# 7. plots
+p.plot_calc_rate(cr)
+p.plot_oxy_crit(oc)</code></pre></div>
+</div>
+
+<h2 id="structure">14. Package structure comparison (respR vs resprpy)</h2>
+
+<p><b>respR</b> is a standard R package: 33 source files under <code>R/</code> and
+16 imported packages (data.table, dplyr, marelac, roll, segmented, lubridate,
+xml2…), of which the rolling regression (<code>roll</code>), physics constants
+(<code>marelac</code>) and breakpoint regression (<code>segmented</code>) are
+separate C/C++ packages.
+<b>resprpy</b> is a pure-Python package: 19 modules under
+<code>src/resprpy/</code>, depending only on numpy/scipy (plus optional
+matplotlib for plots); every underlying algorithm is inlined — no C/C++ runtime.</p>
+
+<h4>Source file ↔ module mapping</h4>
+<table>
+  <tr><th>respR (R/)</th><th>resprpy (src/resprpy/)</th><th>Notes</th></tr>
+  <tr><td><code>calc_rate.R</code></td><td><code>calc.py</code></td><td>manual rates + CalcRate class</td></tr>
+  <tr><td><code>calc_rate.int.R</code> <code>calc_rate.bg.R</code> <code>calc_rate.ft.R</code> <code>auto_rate.int.R</code></td><td><code>intflow.py</code></td><td>intermittent / background / flowthrough / auto interval</td></tr>
+  <tr><td><code>auto_rate.R</code> <code>auto_rate_funs.R</code></td><td><code>auto.py</code></td><td>auto_rate + AutoRate class (rolling regression / KDE / peaks inlined)</td></tr>
+  <tr><td><code>adjust_rate.R</code> <code>adjust_rate.ft.R</code></td><td><code>adjust.py</code></td><td>6 adjustment methods</td></tr>
+  <tr><td><code>select_rate.R</code> <code>select_rate.ft.R</code> <code>test_lin.R</code></td><td><code>selectrate.py</code></td><td>34 selection methods + linearity test</td></tr>
+  <tr><td><code>convert_DO.R</code> <code>convert_MR.R</code> <code>convert_rate.R</code> <code>convert_val.R</code></td><td><code>convert.py</code></td><td>unit conversion + ConvertRate class</td></tr>
+  <tr><td><code>convert_rate.ft.R</code></td><td><code>convertft.py</code></td><td>flowthrough conversion</td></tr>
+  <tr><td><code>format_time.R</code></td><td><code>timefmt.py</code></td><td>time parsing</td></tr>
+  <tr><td><code>import_file.R</code></td><td><code>importers.py</code></td><td>14 instrument parsers</td></tr>
+  <tr><td><code>inspect.R</code> <code>inspect.ft.R</code></td><td><code>inspectmod.py</code></td><td>6 QC checks</td></tr>
+  <tr><td><code>oxy_crit.R</code></td><td><code>oxycrit.py</code></td><td>bsr + segmented (Muggeo inlined)</td></tr>
+  <tr><td><code>data.R</code> <code>sim_data.R</code> <code>subsample.R</code> <code>subset_data.R</code></td><td><code>data.py</code></td><td>data utilities</td></tr>
+  <tr><td><code>util_plots.R</code></td><td><code>plots.py</code></td><td>plotting (matplotlib)</td></tr>
+  <tr><td><code>unit_args.R</code> <code>util_val.R</code></td><td><code>_units.py</code> + <code>convert.py</code></td><td>unit system</td></tr>
+  <tr><td>(dep) <code>marelac</code></td><td><code>_marelac.py</code> <code>_gibbs_coeffs.py</code></td><td>physics constants inlined</td></tr>
+  <tr><td>(dep) <code>roll</code> (C++)</td><td><code>auto.py</code></td><td>rolling regression inlined</td></tr>
+  <tr><td>(dep) <code>segmented</code></td><td><code>oxycrit.py</code></td><td>Muggeo algorithm + bootstrap inlined</td></tr>
+  <tr><td>(R core) <code>RNG.c</code> (MT19937)</td><td><code>_rng.py</code></td><td>R random engine, bit-exact</td></tr>
+  <tr><td>(R core) <code>stats</code> C (zeroin2/density/fft)</td><td><code>auto.py</code></td><td>uniroot / KDE / FFT inlined</td></tr>
+  <tr><td>unit regex tables (<code>*.rgx.R</code>)</td><td><code>_unit_regexes.py</code></td><td>auto-extracted by gen_code.py</td></tr>
+  <tr><td><code>respR.R</code> <code>startup.R</code></td><td><code>__init__.py</code></td><td>package entry / exports</td></tr>
+</table>
+
+<h4>Dependency comparison</h4>
+<table>
+  <tr><th>respR imports (16 packages)</th><th>resprpy dependencies</th></tr>
+  <tr><td>data.table, dplyr, purrr, stringr, glue, xml2, lubridate, magrittr…</td><td>numpy, scipy (equivalent logic implemented in pure Python)</td></tr>
+  <tr><td>marelac (physics), roll (rolling C++), segmented (breakpoints)</td><td>inlined as <code>_marelac.py</code>, <code>auto.py</code>, <code>oxycrit.py</code> + <code>_rng.py</code></td></tr>
+  <tr><td>graphics / grDevices (plotting)</td><td>matplotlib (optional)</td></tr>
+</table>
+
+<h2 id="objects">15. Output object structure</h2>
+
+<table>
+  <tr><th>Object</th><th>R access</th><th>Python access</th><th>Notes</th></tr>
+  <tr><td>calc_rate</td><td><code>cr$rate</code> <code>cr$summary</code> <code>cr$subsets</code> <code>cr$dataframe</code></td><td><code>cr.rate</code> <code>cr.summary</code> (dict) <code>cr.subsets</code> (list) <code>cr.dataframe</code></td><td>summary keys: rep/rank/intercept_b0/slope_b1/rsq/row/endrow/time/endtime/oxy/endoxy/rate.2pt/rate</td></tr>
+  <tr><td>auto_rate</td><td><code>ar$density</code> <code>ar$peaks</code> <code>ar$roll</code></td><td><code>ar.density</code> ((x,y) tuple) <code>ar.peaks</code> <code>ar.roll</code></td><td>summary additionally has density column</td></tr>
+  <tr><td>convert_rate</td><td><code>cv$rate.output</code> <code>cv$summary</code></td><td><code>cv.rate_output</code> <code>cv.summary</code></td><td>summary additionally has rate.abs/rate.m.spec/rate.a.spec/volume/mass/S/t/P</td></tr>
+  <tr><td>adjust_rate</td><td><code>adj$summary$rate.adjusted</code></td><td><code>adj.summary["rate.adjusted"]</code></td><td>has adjustment column</td></tr>
+  <tr><td>select_rate</td><td><code>sr$original</code> <code>sr$summary</code></td><td><code>sr.original</code> <code>sr.summary</code></td><td>returns a copy; input unchanged</td></tr>
+  <tr><td>inspect</td><td><code>ins$checks</code> <code>ins$locs</code></td><td><code>ins["checks"]</code> <code>ins["locs"]</code></td><td>inspect is a dict; row numbers 1-based</td></tr>
+  <tr><td>oxy_crit</td><td><code>oc$crit</code> <code>oc$summary</code></td><td><code>oc["crit"]</code> <code>oc["summary"]</code></td><td>bsr crit holds intercept &amp; midpoint</td></tr>
+</table>
+
+<h2 id="diffs">16. Known differences &amp; caveats</h2>
+
+<table>
+  <tr><th>Item</th><th>respR (R)</th><th>resprpy (Python)</th></tr>
+  <tr><td>Input format</td><td>data.frame / data.table</td><td>numpy 2D arrays (two columns: time, oxygen)</td></tr>
+  <tr><td>Output objects</td><td>S3 objects (<code>$rate</code>)</td><td>dataclasses (<code>.rate</code>) or dicts</td></tr>
+  <tr><td>Naming</td><td>dots: <code>calc_rate.int</code>, <code>oxy.unit</code></td><td>underscores: <code>calc_rate_int</code>, <code>oxy_unit</code>; <code>from</code>→<code>from_</code>, <code>length.out</code>→<code>length_out</code>, <code>add.data</code>→<code>add_data</code></td></tr>
+  <tr><td>Row numbers</td><td>1-based</td><td><b>1-based (same as R)</b></td></tr>
+  <tr><td>import_file</td><td>fread mis-splits some tab files</td><td>stricter parsing, more reliable</td></tr>
+  <tr><td>test_lin random data</td><td>R native RNG</td><td>embedded R MT19937; structure matches, individual samples not value-comparable</td></tr>
+  <tr><td>Pipe %&gt;%</td><td>magrittr</td><td>—; Python chaining instead</td></tr>
+  <tr><td>Plotting</td><td>base graphics</td><td>matplotlib (visual replica, not pixel-identical)</td></tr>
+  <tr><td>Performance</td><td>rolling regression in C</td><td>vectorized numpy (calc_rate 15–100× faster; auto_rate 10k-row window scan ~47× slower, optimizable with incremental OLS)</td></tr>
+  <tr><td>License</td><td>GPL-3</td><td>GPL-3</td></tr>
+</table>
+
+<div class="warn"><b>Important:</b> resprpy is a value-exact port — if your pipeline
+already runs in R, the numeric results in resprpy should be identical (57 parity
+tests cover every exported function). Re-distribution or commercial use must
+comply with GPL-3.</div>
+
+</main>
+
+<footer>resprpy — complete Python port of respR 2.3.4 · 57/57 parity tests green · GPL-3<br>
+All code examples in this guide were executed locally.</footer>
+
+</body>
+</html>
