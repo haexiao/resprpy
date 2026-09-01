@@ -78,6 +78,21 @@ python -m pytest tests/ -v        # 57 项，全绿
 
 详见使用手册中的"结构对照"章节。
 
+## 引用
+
+resprpy 是 R 包 **respR** 的 Python 移植。在论文或衍生软件中使用 resprpy
+时，请引用原始 respR 文献：
+
+> Harianto, J., Carey, N., & Byrne, M. (2019). respR — An R package for the
+> manipulation and analysis of respirometry data. *Methods in Ecology and
+> Evolution*, 10(6), 912–920. doi:10.1111/2041-210X.13162
+
+- respR 源码：<https://github.com/januarharianto/respR>
+- respR 文档：<https://januarharianto.github.io/respR/>
+- CRAN：<https://cran.r-project.org/package=respR>
+
+机器可读引用元数据：[CITATION.cff](CITATION.cff)。
+
 ## 许可
 
 GPL-3（与 respR 相同）。本项目是 respR 及其依赖算法（roll/marelac/

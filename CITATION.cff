@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: >-
+  resprpy is a Python port of the R package respR. If you use resprpy in
+  publications or software, please cite the original respR journal article
+  and package (see preferred-citation below).
+title: "resprpy — Python port of the respR R package"
+authors:
+- given-names: "haexiao"
+  orcid: ""
+date-released: 2026-09-01
+url: "https://github.com/haexiao/resprpy"
+license: GPL-3.0-or-later
+derived-from:
+  name: "respR"
+  version: "2.3.4"
+  url: "https://github.com/januarharianto/respR"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Harianto"
+    given-names: "Januar"
+  - family-names: "Carey"
+    given-names: "Nicholas"
+  - family-names: "Byrne"
+    given-names: "Maria"
+  doi: "10.1111/2041-210X.13162"
+  journal: "Methods in Ecology and Evolution"
+  start: 912
+  end: 920
+  title: "respR — An R package for the manipulation and analysis of respirometry data"
+  issue: 6
+  volume: 10
+  year: 2019

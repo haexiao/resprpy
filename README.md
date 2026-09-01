@@ -81,6 +81,21 @@ tolerances (coeffs 1e-8, rsq 1e-12, time 1e-9, density 1e-3).
 
 See the structure comparison section in the usage guides.
 
+## Citation
+
+resprpy is a Python port of the R package **respR**. If you use resprpy in
+publications or derived software, please cite the original respR work:
+
+> Harianto, J., Carey, N., &amp; Byrne, M. (2019). respR — An R package for the
+> manipulation and analysis of respirometry data. *Methods in Ecology and
+> Evolution*, 10(6), 912–920. doi:10.1111/2041-210X.13162
+
+- respR source: <https://github.com/januarharianto/respR>
+- respR documentation: <https://januarharianto.github.io/respR/>
+- CRAN: <https://cran.r-project.org/package=respR>
+
+Machine-readable citation metadata: [CITATION.cff](CITATION.cff).
+
 ## License
 
 GPL-3 (same as respR). This is a clean-room style port of respR's
