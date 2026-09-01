@@ -290,9 +290,11 @@ class ConvertRate:
 
 def _rate_object_parts(x):
     """Extract (rate, summary) from a calc_rate/auto_rate/adjust_rate-like
-    object, or (x, None) for plain numeric input."""
+    object (dataclass or dict), or (x, None) for plain numeric input."""
     if hasattr(x, "rate") and hasattr(x, "summary"):
         return x.rate, x.summary
+    if isinstance(x, dict) and "rate" in x and "summary" in x:
+        return x["rate"], x["summary"]
     return None, None
 
 
@@ -345,8 +347,8 @@ def convert_rate(x, oxy_unit=None, time_unit=None, output_unit=None,
         n = np.size(rate)
         summary = {"rank": np.arange(1, n + 1), "rate": np.asarray(rate).ravel()}
     else:
-        rate = _asnum(x.rate)
-        summary = dict(x.summary)
+        rate = _asnum(rate_obj)
+        summary = dict(summ_in)
 
     oxy = units_val(oxy_unit, "o2")
     time = units_val(time_unit, "time")

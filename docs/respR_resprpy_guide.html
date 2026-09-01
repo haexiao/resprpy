@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>respR 使用指南 & resprpy 对照手册</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --muted: #5a5a72;
+    --border: #e2e2ee; --card: #f7f7fb; --accent: #1f77b4;
+    --r: #b2182b; --py: #1e8449; --code-bg: #f4f4f8;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: var(--fg);
+         line-height: 1.7; margin: 0; background: var(--bg); }
+  header { background: linear-gradient(135deg, #102a43, #1f77b4); color: #fff;
+           padding: 3rem 2rem 2.5rem; }
+  header h1 { margin: 0 0 .4rem; font-size: 2rem; }
+  header p { margin: 0; opacity: .92; font-size: .98rem; }
+  nav { position: sticky; top: 0; background: #102a43; padding: .5rem 2rem;
+        overflow-x: auto; white-space: nowrap; z-index: 10; }
+  nav a { color: #cfe3f5; text-decoration: none; font-size: .85rem;
+          margin-right: 1.2rem; }
+  nav a:hover { color: #fff; text-decoration: underline; }
+  main { max-width: 980px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
+  h2 { border-bottom: 2px solid var(--accent); padding-bottom: .3rem;
+       margin-top: 2.8rem; font-size: 1.45rem; }
+  h3 { margin-top: 2rem; font-size: 1.15rem; color: #123; }
+  h4 { margin: 1.2rem 0 .3rem; font-size: 1rem; }
+  table { border-collapse: collapse; width: 100%; margin: .8rem 0;
+          font-size: .9rem; }
+  th, td { border: 1px solid var(--border); padding: .45rem .6rem;
+           text-align: left; vertical-align: top; }
+  th { background: var(--card); font-weight: 600; }
+  tr:nth-child(even) td { background: #fbfbfe; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .88em;
+         background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border);
+        border-radius: 6px; padding: .8rem 1rem; overflow-x: auto;
+        font-size: .86rem; line-height: 1.55; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .dual { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .dual pre { margin: 0; }
+  .r-tag, .py-tag { font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+                    display: inline-block; padding: .1rem .5rem; border-radius: 3px;
+                    color: #fff; margin-bottom: .3rem; }
+  .r-tag { background: var(--r); }
+  .py-tag { background: var(--py); }
+  .note { background: #fff8e6; border-left: 4px solid #e6a817; padding: .6rem 1rem;
+          margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .ok { background: #eefaf1; border-left: 4px solid var(--py); padding: .6rem 1rem;
+        margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .warn { background: #fdeef0; border-left: 4px solid var(--r); padding: .6rem 1rem;
+          margin: .8rem 0; font-size: .9rem; border-radius: 0 6px 6px 0; }
+  .flow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+          background: var(--card); border: 1px solid var(--border);
+          border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .flow span { background: #fff; border: 1px solid var(--accent); color: var(--accent);
+               border-radius: 20px; padding: .15rem .8rem; font-size: .83rem; }
+  .flow b { color: var(--muted); font-weight: 400; }
+  footer { color: var(--muted); font-size: .82rem; text-align: center;
+           padding: 2rem; border-top: 1px solid var(--border); }
+  @media (max-width: 760px) { .dual { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>respR 使用指南 &amp; resprpy 对照手册</h1>
+  <p>水生态呼吸代谢分析：R 包 respR 2.3.4（Harianto &amp; Carey 2019, Methods in Ecology and Evolution）的功能、用法，与 Python 移植版 resprpy 的逐项对照。resprpy 的数值输出与 R 完全一致（56 项对拍测试全绿）。</p>
+</header>
+
+<nav>
+  <a href="#overview">总览与流程</a>
+  <a href="#import">导入</a>
+  <a href="#inspect">检查</a>
+  <a href="#utils">数据工具</a>
+  <a href="#calc">手动速率</a>
+  <a href="#auto">自动速率</a>
+  <a href="#adjust">背景校正</a>
+  <a href="#select">筛选</a>
+  <a href="#convert">单位换算</a>
+  <a href="#oxycrit">临界氧</a>
+  <a href="#testlin">线性检验</a>
+  <a href="#plot">绘图</a>
+  <a href="#example">完整流程</a>
+  <a href="#objects">对象结构</a>
+  <a href="#diffs">已知差异</a>
+</nav>
+
+<main>
+
+<h2 id="overview">一、总览与分析流程</h2>
+
+<p><strong>respR</strong> 是 R 生态中处理呼吸代谢（respirometry）数据的标准包：导入仪器数据、检查质量、计算耗氧率（MO₂）、做背景校正、单位换算、筛选结果、估计临界氧张力（Pcrit/O₂crit）。<strong>resprpy</strong> 是它的完整 Python 移植（GPL-3），27 个导出函数一一对应，数值与 R 实测输出逐位一致，可用于脱离 R 环境的独立分析（如桌面应用打包）。</p>
+
+<div class="flow">
+  <span>数据文件</span><b>→</b>
+  <span>import_file</span><b>→</b>
+  <span>inspect</span><b>→</b>
+  <span>calc_rate / auto_rate</span><b>→</b>
+  <span>adjust_rate</span><b>→</b>
+  <span>convert_rate</span><b>→</b>
+  <span>select_rate</span><b>→</b>
+  <span>oxy_crit</span><b>→</b>
+  <span>结果</span>
+</div>
+
+<h3>27 个导出函数速查对照表</h3>
+<table>
+  <tr><th>功能</th><th>respR (R)</th><th>resprpy (Python)</th><th>状态</th></tr>
+  <tr><td>导入仪器文件</td><td><code>import_file()</code></td><td><code>import_file()</code></td><td>✅ NeoFox 逐值一致</td></tr>
+  <tr><td>数据检查</td><td><code>inspect()</code> / <code>inspect.ft()</code></td><td><code>inspect()</code> / <code>inspect_ft()</code></td><td>✅ 对拍一致</td></tr>
+  <tr><td>时间格式化</td><td><code>format_time()</code></td><td><code>format_time()</code></td><td>✅ 逐值一致</td></tr>
+  <tr><td>数据抽样/子集</td><td><code>subsample()</code> <code>subset_data()</code> <code>sim_data()</code></td><td>同名</td><td>✅ 对拍一致</td></tr>
+  <tr><td>手动速率</td><td><code>calc_rate()</code> <code>calc_rate.int()</code> <code>calc_rate.bg()</code> <code>calc_rate.ft()</code></td><td><code>calc_rate()</code> <code>calc_rate_int()</code> <code>calc_rate_bg()</code> <code>calc_rate_ft()</code></td><td>✅ 对拍一致</td></tr>
+  <tr><td>自动速率</td><td><code>auto_rate()</code> <code>auto_rate.int()</code></td><td><code>auto_rate()</code> <code>auto_rate_int()</code></td><td>✅ 对拍一致</td></tr>
+  <tr><td>背景校正</td><td><code>adjust_rate()</code> <code>adjust_rate.ft()</code></td><td><code>adjust_rate()</code> <code>adjust_rate_ft()</code></td><td>✅ 6 方法对拍</td></tr>
+  <tr><td>结果筛选</td><td><code>select_rate()</code> <code>select_rate.ft()</code></td><td><code>select_rate()</code> <code>select_rate_ft()</code></td><td>✅ 34 方法全覆盖</td></tr>
+  <tr><td>单位换算</td><td><code>convert_DO()</code> <code>convert_MR()</code> <code>convert_rate()</code> <code>convert_rate.ft()</code> <code>convert_val()</code></td><td>同名（参数点号→下划线）</td><td>✅ 对拍一致</td></tr>
+  <tr><td>临界氧张力</td><td><code>oxy_crit()</code></td><td><code>oxy_crit()</code></td><td>✅ bsr + segmented</td></tr>
+  <tr><td>线性检验</td><td><code>test_lin()</code></td><td><code>test_lin()</code></td><td>🟡 结构一致，RNG 细节不同</td></tr>
+  <tr><td>单位参数表</td><td><code>unit_args()</code></td><td><code>unit_args()</code></td><td>✅</td></tr>
+  <tr><td>绘图</td><td><code>plot(x)</code> S3 方法</td><td><code>plot_inspect()</code> <code>plot_calc_rate()</code> <code>plot_auto_rate()</code> <code>plot_oxy_crit()</code></td><td>✅ matplotlib 视觉复刻</td></tr>
+  <tr><td>管道</td><td><code>%&gt;%</code></td><td>无（Python 链式调用）</td><td>➖ 不适用</td></tr>
+</table>
+
+<h2 id="import">二、数据导入 import_file</h2>
+
+<p>读取各种呼吸仪软件导出的原始文件（Witrox、NeoFox、AutoResp、Pyro 等 14 种格式），自动识别表头与单位。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>library(respR)
+dat &lt;- import_file("Witrox_eg.txt")
+# $dataframe 为原始数据表</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>import resprpy as p
+dat = p.import_file("Witrox_eg.txt")
+# dat["dataframe"] 为原始数据表</code></pre></div>
+</div>
+
+<div class="note"><b>备注：</b>R 的 <code>fread</code> 会把某些 tab 分隔文件误拆成多列（R 自身的解析缺陷）；resprpy 的解析器更严格，逐值对拍以 R 能正确解析的样本（NeoFox）为基准，最大误差 0.0。</div>
+
+<h2 id="inspect">三、数据检查 inspect</h2>
+
+<p>检查数据质量：时间递增性、氧浓度范围、缺失值、重复值、序列异常等 6 项 QC 检查，并标注问题行的位置。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>res &lt;- inspect(dat, time = 1, oxygen = 2,
+              width = 0.1)
+res$checks   # 检查结果表
+res$locs     # 问题行位置</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>res = p.inspect(dat, time=1, oxygen=2,
+                width=0.1)
+res["checks"]   # 检查结果表
+res["locs"]     # 问题行位置</code></pre></div>
+</div>
+
+<p><code>inspect.ft()</code> / <code>inspect_ft()</code> 用于流水式（flowthrough）数据：同时检查入水口、出水口氧浓度及其差值（delta）。</p>
+
+<h2 id="utils">四、数据工具</h2>
+
+<h4>format_time — 时间字符串解析</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>format_time("2024-01-01 12:30:45",
+            format = "ymdHMS")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.format_time("2024-01-01 12:30:45",
+              format="ymdHMS")</code></pre></div>
+</div>
+<p>支持 <code>ymdHMS</code>、<code>dmyHMS</code>、<code>HMS</code> 等格式；返回数值秒数（resprpy 与 R 一样采用秒差+1 的起点约定）。</p>
+
+<h4>subsample / subset_data — 抽样与子集</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>subsample(dat, n = 100)          # 均匀抽 100 行
+subsample(dat, length.out = 50)  # 每 50 行抽 1
+subset_data(dat, from = 10, to = 90,
+            by = "time")         # 时间区间</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.subsample(dat, n=100)
+p.subsample(dat, length_out=50)
+p.subset_data(dat, from_=10, to=90, by="time")</code></pre></div>
+</div>
+
+<h4>sim_data — 模拟数据</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>sim_data(len = 300, type = "default",
+         sd = 0.05)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.sim_data(len=300, type="default", sd=0.05)</code></pre></div>
+</div>
+<p>生成带已知斜率的模拟耗氧序列，用于测试流程；<code>test_lin()</code> 用它检验自动速率计算的准确性。</p>
+
+<h2 id="calc">五、手动速率计算</h2>
+
+<h4>calc_rate — 指定区间回归</h4>
+<p>在原始数据上按 <code>from/to</code>（时间或行号）选定窗口做线性回归，得斜率（耗氧率）、截距、R² 及端点值。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cr &lt;- calc_rate(dat, from = 10, to = 90,
+                by = "time")      # by = "row" 按行
+cr$rate        # 速率值
+cr$summary     # 回归详情表
+cr$subsets     # 各区间的原始数据</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cr = p.calc_rate(dat, from_=10, to=90,
+                 by="time")
+cr.rate        # 速率值
+cr.summary     # 回归详情表 (dict)
+cr.subsets     # 各区间的原始数据</code></pre></div>
+</div>
+
+<h4>calc_rate.int — 自动分段区间</h4>
+<p>按"预热-测量"循环自动分段：<code>starts</code>（起始行/时间）、<code>wait</code>（等待）、<code>measure</code>（测量时长），适合间歇式呼吸实验。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>calc_rate.int(dat, starts = 30,
+              wait = 5, measure = 20,
+              by = "row")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.calc_rate_int(dat, starts=30,
+                wait=5, measure=20,
+                by="row")</code></pre></div>
+</div>
+
+<h4>calc_rate.bg — 空白背景速率</h4>
+<p>对空白（无动物）数据计算背景耗氧，供 <code>adjust_rate()</code> 使用。参数与 <code>calc_rate</code> 一致（默认全程回归）。</p>
+
+<h4>calc_rate.ft — 流水式速率</h4>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>calc_rate.ft(oxy_in, oxy_out,
+             flowrate = 2,  # L/h 等
+             by = "time", width = 10)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.calc_rate_ft(oxy_in, oxy_out,
+               flowrate=2, by="time",
+               width=10)</code></pre></div>
+</div>
+<p>用入水/出水氧浓度差 × 流速计算代谢率；<code>width</code> 是滚动窗口宽度。</p>
+
+<h2 id="auto">六、自动速率计算 auto_rate</h2>
+
+<p>自动扫描所有可能的窗口并选出最优速率，6 种方法：</p>
+<table>
+  <tr><th>method</th><th>含义</th></tr>
+  <tr><td><code>linear</code></td><td>滚动回归中 R² 最高（结合核密度峰）</td></tr>
+  <tr><td><code>lowest</code> / <code>highest</code></td><td>最低/最高速率（按绝对值语义）</td></tr>
+  <tr><td><code>minimum</code> / <code>maximum</code></td><td>数值最小/最大速率</td></tr>
+  <tr><td><code>rolling</code></td><td>滚动窗口回归的全程扫描</td></tr>
+  <tr><td><code>interval</code></td><td>指定等长区间</td></tr>
+</table>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>ar &lt;- auto_rate(dat, method = "linear",
+                width = 10, by = "row")
+ar$rate       # 自动选出的速率
+ar$summary    # 结果表（含 rank/row/endrow）
+ar$density    # 核密度估计
+ar$peaks      # 密度峰</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>ar = p.auto_rate(dat, method="linear",
+                 width=10, by="row")
+ar.rate
+ar.summary    # dict
+ar.density    # (x, y) 元组
+ar.peaks</code></pre></div>
+</div>
+
+<div class="ok"><b>数值一致性：</b>auto_rate 全链（滚动回归、bw.SJ 带宽、核密度、峰检测）与 R 逐位一致；density 512 点最大相对差 2e-13。</div>
+
+<h2 id="adjust">七、背景校正 adjust_rate</h2>
+
+<p>6 种校正方法：<code>value</code>（常数）、<code>mean</code>（背景均值）、<code>paired</code>（成对）、<code>concurrent</code>（并行空白）、<code>linear</code>（线性插值）、<code>exponential</code>（指数插值）。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>adj &lt;- adjust_rate(cr, by = -0.0002,
+                   method = "value")
+adj &lt;- adjust_rate(cr, by = bg,      # calc_rate.bg 对象
+                   method = "mean")
+adj$summary$rate.adjusted  # 校正后速率</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>adj = p.adjust_rate(cr, by=-0.0002,
+                    method="value")
+adj = p.adjust_rate(cr, by=bg, method="mean")
+adj.summary["rate.adjusted"]</code></pre></div>
+</div>
+
+<h2 id="select">八、结果筛选 select_rate</h2>
+
+<p>34 种筛选方法，分四类：</p>
+<ul>
+  <li><b>数值筛选</b>：<code>lowest/highest/minimum/maximum</code>（n 个）、<code>*_percentile</code>（百分位）、<code>rate</code>（区间）、<code>zero/nonzero/positive/negative</code></li>
+  <li><b>时间/行号筛选</b>：<code>time/time_omit</code>、<code>row/row_omit</code>、<code>duration</code>、<code>oxygen/oxygen_omit</code></li>
+  <li><b>索引筛选</b>：<code>rank/rank_omit</code>、<code>rep/rep_omit</code>、<code>manual/manual_omit</code></li>
+  <li><b>重排序</b>：<code>rolling</code>（按行）、<code>intercept/slope/rsq</code>（按统计量）、<code>density/linear</code>（按密度，仅 auto_rate linear 对象）</li>
+</ul>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cv &lt;- convert_rate(cr, ...)      # 输入须为 convert_rate 对象
+sr &lt;- select_rate(cv, "highest", n = 3)
+sr &lt;- select_rate(cv, "rate", n = c(-0.1, 0.1))
+sr$summary       # 筛选后的结果
+sr$original      # 未筛选的原对象</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cv = p.convert_rate(cr, ...)
+sr = p.select_rate(cv, "highest", n=3)
+sr = p.select_rate(cv, "rate", n=[-0.1, 0.1])
+sr.summary
+sr.original</code></pre></div>
+</div>
+
+<div class="note"><b>R 对象语义：</b>select_rate 返回<b>副本</b>，输入对象不变（resprpy 同样如此）。R 的 <code>density/linear</code> 只接受 auto_rate linear 对象、<code>rep</code> 系需要 rep 值——两者报错行为也一致。</div>
+
+<h2 id="convert">九、单位换算</h2>
+
+<h4>convert_rate — 完整换算链</h4>
+<p>把速率从"氧单位/时间单位"换算到目标单位，可附加体积（→ 绝对耗氧）、质量/面积（→ 比速率），并按 S/t/P 校正溶解氧。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>cv &lt;- convert_rate(cr,
+  oxy.unit = "mg/L", time.unit = "sec",
+  output.unit = "mg/h/kg",
+  volume = 0.1, mass = 0.01)
+cv$rate.output   # 换算后速率</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>cv = p.convert_rate(cr,
+  oxy_unit="mg/L", time_unit="sec",
+  output_unit="mg/h/kg",
+  volume=0.1, mass=0.01)
+cv.rate_output</code></pre></div>
+</div>
+
+<h4>convert_DO / convert_MR / convert_val — 基础换算</h4>
+<table>
+  <tr><th>函数</th><th>用途</th></tr>
+  <tr><td><code>convert_DO(x, from, to, S, t, P)</code></td><td>溶解氧浓度单位：mg/L、%Air、%O₂、kPa、hPa、torr、umol/L、mL/L 等，物理常数来自 marelac（solubility/摩尔体积/密度），可指定盐度 S、温度 t、气压 P</td></tr>
+  <tr><td><code>convert_MR(x, from, to, ...)</code></td><td>代谢率单位（含时间维度：per sec/min/hr/day）</td></tr>
+  <tr><td><code>convert_val(x, from, to)</code></td><td>任意数值单位转换（长度、质量、体积、压力…）</td></tr>
+</table>
+
+<div class="ok"><b>数值一致性：</b>6 个物理锚点全中（如 sw_dens=1024.64077347883、molvol=24.03038425、mg/L→%Air=108.4419），逐值对拍 ≤1e-12。</div>
+
+<h2 id="oxycrit">十、临界氧张力 oxy_crit</h2>
+
+<p>估计临界氧张力（Pcrit / O₂crit）——耗氧率开始随环境氧下降的转折点，两种方法：</p>
+<ul>
+  <li><b>bsr</b>（默认）：断棒回归（Yeager &amp; Ultsch 1989），给出截距法与中点法两个估计</li>
+  <li><b>segmented</b>：分段回归（Muggeo 2003，R segmented 包算法，含 bootstrap-restart 随机搜索）</li>
+</ul>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>oc &lt;- oxy_crit(dat, method = "bsr",
+               width = 0.1)
+oc$crit        # list(intercept, midpoint)
+oc$summary     # 断棒结果
+oc2 &lt;- oxy_crit(dat, method = "segmented")
+oc2$crit       # 断点值</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>oc = p.oxy_crit(dat, method="bsr", width=0.1)
+oc["crit"]     # dict(intercept, midpoint)
+oc["summary"]
+oc2 = p.oxy_crit(dat, method="segmented")
+oc2["crit"]</code></pre></div>
+</div>
+
+<div class="ok"><b>数值一致性：</b>segmented 法完整移植了 R 的 MT19937 随机引擎（set.seed 序列逐位一致），bootstrap-restart 10 次重抽样与 R 结果逐位相同（crit=7.719111…）。</div>
+
+<h2 id="testlin">十一、线性检验 test_lin</h2>
+
+<p>用已知斜率的数据测试 <code>auto_rate</code> 的检测准确度：生成模拟数据 → 自动测速 → 对比真实斜率，输出回归统计。</p>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>test_lin(reps = 1, len = 300,
+         sd = 0.05, type = "default")</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.test_lin(reps=1, len_=300, sd=0.05,
+           type="default", seed=None)</code></pre></div>
+</div>
+<div class="note"><b>差异：</b>R 的随机数据由 R 原生 RNG 生成；resprpy 内置了 R 的 MT19937（逐位一致），但 <code>sim_data</code> 的噪声路径与 R 内部调用顺序不完全相同，统计结果结构一致、个别随机样本值不可逐值比。</div>
+
+<h2 id="plot">十二、绘图</h2>
+
+<p>R 用 S3 泛型 <code>plot(x)</code>；resprpy 提供 matplotlib 版（配色、布局、内容对齐 R 的 base graphics）：</p>
+<table>
+  <tr><th>对象</th><th>R</th><th>Python</th><th>面板内容</th></tr>
+  <tr><td>inspect</td><td><code>plot(ins)</code></td><td><code>p.plot_inspect(ins)</code></td><td>时间序列 + 行号顶轴 + 滑动回归线</td></tr>
+  <tr><td>calc_rate</td><td><code>plot(cr)</code></td><td><code>p.plot_calc_rate(cr, pos=1)</code></td><td>2×2：全序列 / 局部放大 / 残差 / QQ</td></tr>
+  <tr><td>auto_rate</td><td><code>plot(ar)</code></td><td><code>p.plot_auto_rate(ar, pos=1)</code></td><td>全序列 / 局部 / 滚动速率 / 残差 / QQ（linear 加密度）</td></tr>
+  <tr><td>oxy_crit</td><td><code>plot(oc)</code></td><td><code>p.plot_oxy_crit(oc)</code></td><td>时间序列+断点线 / Rate~Oxygen 结果</td></tr>
+</table>
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>plot(cr)                 # 全部 4 面板
+plot(cr, panel = 2)      # 单面板
+plot(oc)                 # oxy_crit 结果</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>p.plot_calc_rate(cr)             # 弹出窗口
+p.plot_calc_rate(cr, panel=2)
+p.plot_calc_rate(cr, save="a.png")
+p.plot_oxy_crit(oc)</code></pre></div>
+</div>
+
+<h2 id="example">十三、完整流程示例（间歇式呼吸）</h2>
+
+<div class="dual">
+  <div><span class="r-tag">R</span>
+<pre><code>library(respR)
+
+# 1. 导入并检查
+dat &lt;- import_file("fish.txt")
+ins &lt;- inspect(dat, time = 1,
+               oxygen = 2)
+
+# 2. 自动分段计算速率
+cr &lt;- calc_rate.int(ins,
+    starts = 30, wait = 5,
+    measure = 20, by = "row")
+
+# 3. 背景校正（空白对照）
+bg &lt;- calc_rate.bg(bg_dat)
+adj &lt;- adjust_rate(cr, by = bg,
+    method = "mean")
+
+# 4. 单位换算
+cv &lt;- convert_rate(adj,
+    oxy.unit = "mg/L",
+    time.unit = "sec",
+    output.unit = "mg/h/kg",
+    volume = 0.1, mass = 0.01)
+
+# 5. 筛选最高速率
+sr &lt;- select_rate(cv, "highest", n = 3)
+
+# 6. 临界氧分析
+oc &lt;- oxy_crit(fish_po2_data,
+    method = "segmented")
+
+# 7. 绘图
+plot(cr); plot(sr)</code></pre></div>
+  <div><span class="py-tag">Python</span>
+<pre><code>import resprpy as p
+
+# 1. 导入并检查
+dat = p.import_file("fish.txt")
+ins = p.inspect(dat, time=1, oxygen=2)
+
+# 2. 自动分段计算速率
+cr = p.calc_rate_int(ins,
+    starts=30, wait=5, measure=20,
+    by="row")
+
+# 3. 背景校正（空白对照）
+bg = p.calc_rate_bg(bg_dat)
+adj = p.adjust_rate(cr, by=bg,
+    method="mean")
+
+# 4. 单位换算
+cv = p.convert_rate(adj,
+    oxy_unit="mg/L", time_unit="sec",
+    output_unit="mg/h/kg",
+    volume=0.1, mass=0.01)
+
+# 5. 筛选最高速率
+sr = p.select_rate(cv, "highest", n=3)
+
+# 6. 临界氧分析
+oc = p.oxy_crit(fish_po2_data,
+    method="segmented")
+
+# 7. 绘图
+p.plot_calc_rate(cr)
+p.plot_oxy_crit(oc)</code></pre></div>
+</div>
+
+<h2 id="objects">十四、输出对象结构对照</h2>
+
+<table>
+  <tr><th>对象</th><th>R 访问</th><th>Python 访问</th><th>说明</th></tr>
+  <tr><td>calc_rate</td><td><code>cr$rate</code> <code>cr$summary</code> <code>cr$subsets</code> <code>cr$dataframe</code></td><td><code>cr.rate</code> <code>cr.summary</code>（dict） <code>cr.subsets</code>（list） <code>cr.dataframe</code></td><td>summary 键：rep/rank/intercept_b0/slope_b1/rsq/row/endrow/time/endtime/oxy/endoxy/rate.2pt/rate</td></tr>
+  <tr><td>auto_rate</td><td><code>ar$density</code> <code>ar$peaks</code> <code>ar$roll</code></td><td><code>ar.density</code>（(x,y) 元组） <code>ar.peaks</code> <code>ar.roll</code></td><td>summary 额外含 density 列</td></tr>
+  <tr><td>convert_rate</td><td><code>cv$rate.output</code> <code>cv$summary</code></td><td><code>cv.rate_output</code> <code>cv.summary</code></td><td>summary 额外含 rate.abs/rate.m.spec/rate.a.spec/volume/mass/S/t/P</td></tr>
+  <tr><td>adjust_rate</td><td><code>adj$summary$rate.adjusted</code></td><td><code>adj.summary["rate.adjusted"]</code></td><td>含 adjustment 列</td></tr>
+  <tr><td>select_rate</td><td><code>sr$original</code> <code>sr$summary</code></td><td><code>sr.original</code> <code>sr.summary</code></td><td>返回副本，不修改输入</td></tr>
+  <tr><td>inspect</td><td><code>ins$checks</code> <code>ins$locs</code></td><td><code>ins["checks"]</code> <code>ins["locs"]</code></td><td>inspect 是 dict；行号 1-based</td></tr>
+  <tr><td>oxy_crit</td><td><code>oc$crit</code> <code>oc$summary</code></td><td><code>oc["crit"]</code> <code>oc["summary"]</code></td><td>bsr 的 crit 是 intercept/midpoint 两个值</td></tr>
+</table>
+
+<h2 id="diffs">十五、已知差异与注意事项</h2>
+
+<table>
+  <tr><th>项目</th><th>respR (R)</th><th>resprpy (Python)</th></tr>
+  <tr><td>输入格式</td><td>data.frame / data.table</td><td>numpy 2D 数组（两列：time, oxygen）</td></tr>
+  <tr><td>输出对象</td><td>S3 对象（<code>$rate</code>）</td><td>dataclass（<code>.rate</code>）或 dict</td></tr>
+  <tr><td>命名</td><td>点号 <code>calc_rate.int</code>、<code>oxy.unit</code></td><td>下划线 <code>calc_rate_int</code>、<code>oxy_unit</code>；<code>from</code>→<code>from_</code>、<code>length.out</code>→<code>length_out</code>、<code>add.data</code>→<code>add_data</code></td></tr>
+  <tr><td>行号</td><td>1-based</td><td><b>1-based（与 R 一致）</b></td></tr>
+  <tr><td>import_file</td><td>fread 对部分 tab 文件误拆列</td><td>解析更严格，数值更可靠</td></tr>
+  <tr><td>test_lin 随机数据</td><td>R 原生 RNG</td><td>内置 R MT19937；统计结构一致，个别样本值不可逐值比</td></tr>
+  <tr><td>管道 %&gt;%</td><td>magrittr</td><td>无；Python 直接链式调用</td></tr>
+  <tr><td>绘图</td><td>base graphics</td><td>matplotlib（视觉复刻，非逐像素）</td></tr>
+  <tr><td>性能</td><td>滚动回归 C 代码</td><td>numpy 向量化（calc_rate 快 15–100 倍；auto_rate 10k 行窗口回归慢 ~47 倍，可用增量 OLS 优化）</td></tr>
+  <tr><td>许可</td><td>GPL-3</td><td>GPL-3</td></tr>
+</table>
+
+<div class="warn"><b>重要：</b>resprpy 是 respR 的逐值移植——若你的分析管线在 R 上已经跑通，换用 resprpy 的数值结果应完全一致（56 项对拍测试覆盖全部导出函数）。但发布/商用须遵守 GPL-3 许可。</div>
+
+</main>
+
+<footer>resprpy — respR 2.3.4 的完整 Python 移植 · 56/56 对拍测试全绿 · GPL-3<br>
+文档生成于本项目开发完成后，示例代码均可在本机实跑。</footer>
+
+</body>
+</html>

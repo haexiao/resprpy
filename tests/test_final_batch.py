@@ -266,6 +266,17 @@ def test_select_rate_range_against_R():
 # ---------------------------------------------------------------------------
 # oxy_crit (bsr)
 # ---------------------------------------------------------------------------
+def test_convert_rate_accepts_adjust_rate_dict():
+    """convert_rate must accept an adjust_rate result (dict), as R does."""
+    dat2, cr = _adjust_setup()
+    bgv = p.calc_rate_bg(dat2, plot=False)
+    adj = p.adjust_rate(cr, by=bgv, method="mean")
+    assert isinstance(adj, dict), "adjust_rate should return a dict"
+    cv = p.convert_rate(adj, oxy_unit="mg/L", time_unit="sec",
+                        output_unit="mg/h/kg", volume=0.1, mass=0.01)
+    assert np.size(cv.rate_output) == np.size(adj["rate"])
+
+
 def test_oxy_crit_against_R():
     u = _urchins()
     r = p.oxy_crit(u, method="bsr")
