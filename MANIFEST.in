@@ -1,0 +1,7 @@
+# sdist content control: ship only the package, README, license & citation
+include README.md README.zh-CN.md LICENSE CITATION.cff pyproject.toml
+recursive-include src/resprpy *.py
+prune reference
+prune tests
+prune docs
+global-exclude *.py[cod] __pycache__ .pytest_cache *.egg-info

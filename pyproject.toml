@@ -8,8 +8,20 @@ version = "0.1.0"
 description = "Python port of the respR R package: import, process, analyse and calculate rates from respirometry data"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [{ name = "resprpy contributors" }]
+keywords = ["respirometry", "oxygen", "metabolic-rate", "respR", "aquatic", "mo2", "pcrit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "numpy>=1.22",
     "scipy>=1.8",
@@ -19,8 +31,15 @@ dependencies = [
 plot = ["matplotlib>=3.5"]
 test = ["pytest>=7", "openpyxl>=3.1"]
 
+[project.urls]
+Homepage = "https://github.com/haexiao/resprpy"
+Source = "https://github.com/haexiao/resprpy"
+Documentation = "https://github.com/haexiao/resprpy/blob/master/docs/respR_resprpy_guide.en.html"
+Original = "https://github.com/januarharianto/respR"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["resprpy*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
