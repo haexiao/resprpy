@@ -1,0 +1,2 @@
+"rep","rank","intercept_b0","slope_b1","rsq","row","endrow","time","endtime","oxy","endoxy","delta_mean","flowrate","rate","adjustment","rate.adjusted","rate.input","oxy.unit","flowrate.unit","mass","area","S","t","P","rate.abs","rate.m.spec","rate.a.spec","output.unit","rate.output"
+NA,1,0.498763847599242,-0.00496281390008498,0.995486563510297,1,100,0,100,0.499624862382131,0.0261695312814716,0.250623152594993,0.05,0.0125311576297496,NA,NA,0.0125311576297496,"mg/L","mL/min",0.05,NA,NA,NA,1.013253,0.000751869457784978,0.0150373891556996,NA,"mgO2/hr/kg",0.0150373891556996

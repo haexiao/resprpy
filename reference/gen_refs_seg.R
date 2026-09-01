@@ -1,0 +1,12 @@
+# gen_refs_seg.R - oxy_crit segmented reference outputs (R 4.5.3 + segmented)
+suppressPackageStartupMessages(library(respR))
+suppressPackageStartupMessages(library(segmented))
+u <- read.csv("../tests/reference/urchins.csv")
+oc <- oxy_crit(u, method = "segmented", plot = FALSE)
+cat("psi:", oc$crit, "\n")
+write.csv(data.frame(t(as.data.frame(oc$summary))),
+          "../tests/reference/ref_oxy_crit_seg_summary.csv", row.names = FALSE)
+sf <- as.data.frame(oc$results$seg_fit)
+write.csv(sf, "../tests/reference/ref_oxy_crit_seg_fit.csv", row.names = FALSE)
+cat("nrow seg_fit:", nrow(sf), "\n")
+cat("DONE\n")

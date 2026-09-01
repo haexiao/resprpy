@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+
+# R source references (large, re-downloadable from CRAN/GitHub)
+reference/R-4.5.3/
+reference/R-src.tar.gz
+reference/respR-master/
+reference/r_src/
+reference/respR/
+reference/segmented/
+reference/respR-github.tar.gz
+reference/PACKAGES
+reference/respR_2.3.4.tar.gz
+reference/segmented.tar.gz
+
+# debug scratch
+reference/_dbg*
+reference/_smoke*
