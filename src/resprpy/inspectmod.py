@@ -126,7 +126,12 @@ def _column_id(strings, colnames, msg):
 
 def inspect(x, time=None, oxygen=None, width=0.1, plot=True,
             add_data=None, **kwargs):
-    df = np.asarray(x, dtype=float)
+    # R's inspect() accepts data frames with non-numeric columns (e.g. a
+    # datetime column): only the selected time/oxygen columns are coerced.
+    try:
+        df = np.asarray(x, dtype=float)
+    except (TypeError, ValueError):
+        df = np.asarray(x, dtype=object)
     if df.ndim == 1:
         df = df.reshape(-1, 1)
     ncol = df.shape[1]
@@ -150,8 +155,12 @@ def inspect(x, time=None, oxygen=None, width=0.1, plot=True,
     time_cols = [time] if np.isscalar(time) else list(time)
     oxy_cols = [oxygen] if np.isscalar(oxygen) else list(oxygen)
 
-    xval = [df[:, t - 1] for t in time_cols]
-    yval = [df[:, o - 1] for o in oxy_cols]
+    def _as_num(col):
+        """Coerce a selected column to float (only these are numeric)."""
+        return np.asarray(col, dtype=float)
+
+    xval = [_as_num(df[:, t - 1]) for t in time_cols]
+    yval = [_as_num(df[:, o - 1]) for o in oxy_cols]
 
     x_results = _check_timeseries(xval, "time")
     y_results = _check_timeseries(yval, "oxygen")
@@ -180,7 +189,11 @@ def inspect(x, time=None, oxygen=None, width=0.1, plot=True,
 # ---------------------------------------------------------------------------
 def inspect_ft(x, time=None, out_oxy=None, in_oxy=None, in_oxy_value=None,
                delta_oxy=None, plot=True, add_data=None, **kwargs):
-    df = np.asarray(x, dtype=float)
+    # R's inspect.ft() likewise accepts data frames with non-numeric columns.
+    try:
+        df = np.asarray(x, dtype=float)
+    except (TypeError, ValueError):
+        df = np.asarray(x, dtype=object)
     if df.ndim == 1:
         df = df.reshape(-1, 1)
     ncol = df.shape[1]

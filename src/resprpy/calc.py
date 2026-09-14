@@ -156,7 +156,13 @@ def calc_rate(x, from_=None, to=None, by="time", plot=True, **kwargs):
     """
     inputs = dict(x=x, from_=from_, to=to, by=by, plot=plot)
     by = _by_val(by, msg="calc_rate:")
-    df = np.asarray(x, dtype=float)
+    # R: calc_rate() accepts an 'inspect' object and uses its $dataframe
+    data = x
+    if isinstance(data, dict) and "dataframe" in data:
+        data = data["dataframe"]
+    elif hasattr(data, "dataframe") and not isinstance(data, np.ndarray):
+        data = data.dataframe
+    df = np.asarray(data, dtype=float)
     if df.ndim == 1:
         df = df.reshape(-1, 1)
     if df.shape[1] > 2:
