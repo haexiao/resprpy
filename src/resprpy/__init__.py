@@ -35,7 +35,12 @@ except ImportError:  # matplotlib not installed
 from .selectrate import select_rate, select_rate_ft, test_lin
 from .timefmt import format_time
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
+try:  # keep in sync with the installed distribution metadata
+    from importlib.metadata import version as _pkg_version
+    __version__ = _pkg_version("resprpy")
+except Exception:  # running from a source tree without an install
+    pass
 
 __all__ = [
     "adjust_rate", "adjust_rate_ft",
